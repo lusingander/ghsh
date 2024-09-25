@@ -28,9 +28,9 @@ impl user_repositories::Variables {
     variables_derives = "Debug",
     response_derives = "Debug"
 )]
-pub struct RepositoryStarHistories;
+pub struct RepositoryStars;
 
-impl repository_star_histories::Variables {
+impl repository_stars::Variables {
     pub fn new(owner: &str, name: &str, cursor: Option<String>) -> Self {
         Self {
             owner: owner.into(),

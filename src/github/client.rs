@@ -11,7 +11,7 @@ use reqwest::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::github::{query, scalar::DateTime};
+use crate::github::{query, Repository, Star};
 
 const GITHUB_GRAPHQL_API_ENDPOINT: &str = "https://api.github.com/graphql";
 
@@ -68,8 +68,8 @@ impl GhClient {
 }
 
 impl GhClient {
-    pub async fn all_user_starred_repositories(&self, user: &str) -> Result<Vec<(String, usize)>> {
-        let mut ret: Vec<(String, usize)> = Vec::new();
+    pub async fn all_user_starred_repositories(&self, user: &str) -> Result<Vec<Repository>> {
+        let mut ret: Vec<Repository> = Vec::new();
         let mut cursor = None;
 
         loop {
@@ -91,7 +91,7 @@ impl GhClient {
                 if star == 0 {
                     break;
                 }
-                ret.push((name, star as usize));
+                ret.push(Repository::new(name, star as usize));
             }
 
             if !user.repositories.page_info.has_next_page {
@@ -113,16 +113,12 @@ impl GhClient {
         self.request_query(query).await
     }
 
-    pub async fn all_repository_star_histories(
-        &self,
-        owner: &str,
-        name: &str,
-    ) -> Result<Vec<DateTime>> {
-        let mut ret: Vec<DateTime> = Vec::new();
+    pub async fn all_repository_stars(&self, owner: &str, name: &str) -> Result<Vec<Star>> {
+        let mut ret: Vec<Star> = Vec::new();
         let mut cursor = None;
 
         loop {
-            let resp = self.repository_star_histories(owner, name, cursor).await?;
+            let resp = self.repository_star(owner, name, cursor).await?;
 
             let Some(repository) = resp.repository else {
                 return Err("No repository in response".into());
@@ -130,7 +126,7 @@ impl GhClient {
 
             for edge in repository.stargazers.edges.unwrap_or_default() {
                 if let Some(starred_at) = edge.map(|edge| edge.starred_at) {
-                    ret.push(starred_at);
+                    ret.push(Star::new(starred_at));
                 }
             }
 
@@ -143,14 +139,14 @@ impl GhClient {
         Ok(ret)
     }
 
-    async fn repository_star_histories(
+    async fn repository_star(
         &self,
         owner: &str,
         name: &str,
         cursor: Option<String>,
-    ) -> Result<query::repository_star_histories::ResponseData> {
-        let variables = query::repository_star_histories::Variables::new(owner, name, cursor);
-        let query = query::RepositoryStarHistories::build_query(variables);
+    ) -> Result<query::repository_stars::ResponseData> {
+        let variables = query::repository_stars::Variables::new(owner, name, cursor);
+        let query = query::RepositoryStars::build_query(variables);
         self.request_query(query).await
     }
 

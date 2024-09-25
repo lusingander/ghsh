@@ -20,7 +20,7 @@ query UserRepositories($user: String!, $first: Int!, $cursor: String) {
   }
 }
 
-query RepositoryStarHistories(
+query RepositoryStars(
   $owner: String!
   $name: String!
   $first: Int!

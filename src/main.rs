@@ -13,16 +13,16 @@ async fn main() {
         .await
         .unwrap();
 
-    for (name, star) in repos {
-        println!("{}: {}", name, star)
+    for repo in repos {
+        println!("{:?}", repo)
     }
 
-    let hists = client
-        .all_repository_star_histories("lusingander", "stu")
+    let stars = client
+        .all_repository_stars("lusingander", "stu")
         .await
         .unwrap();
 
-    for hist in hists {
-        println!("{:?}", hist);
+    for star in stars {
+        println!("{:?}", star);
     }
 }
