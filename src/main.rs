@@ -8,13 +8,21 @@ async fn main() {
 
     let client = GhClient::new(token);
 
-    // client
-    //     .all_user_starred_repositories("lusingander")
-    //     .await
-    //     .unwrap();
+    let repos = client
+        .all_user_starred_repositories("lusingander")
+        .await
+        .unwrap();
 
-    client
+    for (name, star) in repos {
+        println!("{}: {}", name, star)
+    }
+
+    let hists = client
         .all_repository_star_histories("lusingander", "stu")
         .await
         .unwrap();
+
+    for hist in hists {
+        println!("{:?}", hist);
+    }
 }
