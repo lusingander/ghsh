@@ -21,3 +21,26 @@ query UserRepositories($user: String!, $first: Int!, $cursor: String) {
     }
   }
 }
+
+query RepositoryStarHistories(
+  $owner: String!
+  $name: String!
+  $first: Int!
+  $cursor: String
+) {
+  repository(owner: $owner, name: $name) {
+    stargazers(
+      first: $first
+      after: $cursor
+      orderBy: { field: STARRED_AT, direction: ASC }
+    ) {
+      edges {
+        starredAt
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}

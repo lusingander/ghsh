@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chrono = "0.4.38"
 graphql_client = "0.14.0"
 reqwest = { version = "0.11.27", features = ["json"] }
 serde = "1.0.210"

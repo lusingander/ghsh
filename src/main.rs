@@ -8,8 +8,13 @@ async fn main() {
 
     let client = GhClient::new(token);
 
+    // client
+    //     .all_user_starred_repositories("lusingander")
+    //     .await
+    //     .unwrap();
+
     client
-        .all_user_starred_repositories("lusingander")
+        .all_repository_star_histories("lusingander", "stu")
         .await
         .unwrap();
 }
