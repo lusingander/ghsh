@@ -1,0 +1,23 @@
+query UserRepositories($user: String!, $first: Int!, $cursor: String) {
+  user(login: $user) {
+    repositories(
+      first: $first
+      after: $cursor
+      isFork: false
+      privacy: PUBLIC
+      ownerAffiliations: OWNER
+      orderBy: { field: STARGAZERS, direction: DESC }
+    ) {
+      edges {
+        node {
+          name
+          stargazerCount
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}
