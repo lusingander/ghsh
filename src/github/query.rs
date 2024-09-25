@@ -4,8 +4,8 @@ use crate::github::scalar::DateTime;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/github/schema.docs.graphql",
-    query_path = "src/github/query.graphql",
+    schema_path = "src/github/graphql/schema.docs.graphql",
+    query_path = "src/github/graphql/query.graphql",
     variables_derives = "Debug",
     response_derives = "Debug"
 )]
@@ -23,8 +23,8 @@ impl user_repositories::Variables {
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/github/schema.docs.graphql",
-    query_path = "src/github/query.graphql",
+    schema_path = "src/github/graphql/schema.docs.graphql",
+    query_path = "src/github/graphql/query.graphql",
     variables_derives = "Debug",
     response_derives = "Debug"
 )]
