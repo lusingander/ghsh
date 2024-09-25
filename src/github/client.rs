@@ -79,15 +79,19 @@ impl GhClient {
                 return Err("No user in response".into());
             };
 
-            for edge in user.repositories.edges.unwrap_or_default() {
-                if let Some(repository) = edge.and_then(|edge| edge.node) {
-                    let name = repository.name;
-                    let star = repository.stargazer_count;
-                    if star == 0 {
-                        break;
-                    }
-                    ret.push((name, star as usize));
+            for repository in user
+                .repositories
+                .nodes
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+            {
+                let name = repository.name;
+                let star = repository.stargazer_count;
+                if star == 0 {
+                    break;
                 }
+                ret.push((name, star as usize));
             }
 
             if !user.repositories.page_info.has_next_page {

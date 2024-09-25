@@ -8,11 +8,9 @@ query UserRepositories($user: String!, $first: Int!, $cursor: String) {
       ownerAffiliations: OWNER
       orderBy: { field: STARGAZERS, direction: DESC }
     ) {
-      edges {
-        node {
-          name
-          stargazerCount
-        }
+      nodes {
+        name
+        stargazerCount
       }
       pageInfo {
         endCursor
