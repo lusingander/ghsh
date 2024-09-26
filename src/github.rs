@@ -8,7 +8,8 @@ use crate::github::scalar::DateTime;
 
 #[derive(Debug)]
 pub struct Repository {
-    name: String,
+    pub name: String,
+    #[expect(dead_code)]
     star: usize,
 }
 
@@ -20,7 +21,7 @@ impl Repository {
 
 #[derive(Debug)]
 pub struct Star {
-    starred_at: chrono::DateTime<Local>,
+    pub starred_at: chrono::DateTime<Local>,
 }
 
 impl Star {
