@@ -1,10 +1,18 @@
+mod chart;
 mod github;
+mod macros;
+mod tui;
+
+use std::error::Error;
 
 use clap::{command, Parser};
 
-use crate::github::{
-    client::{AccessToken, GhClient},
-    Star,
+use crate::{
+    github::{
+        client::{AccessToken, GhClient},
+        Star,
+    },
+    tui::App,
 };
 
 #[derive(Parser)]
@@ -55,37 +63,46 @@ impl Mode {
             _ => panic!("Invalid arguments: either user or repository must be specified"),
         }
     }
+
+    fn title(&self) -> String {
+        match self {
+            Self::User(user) => format!("User: {}", user),
+            Self::Repository(user, repo) => format!("Repository: {}/{}", user, repo),
+        }
+    }
+}
+
+async fn fetch_all_stars(client: GhClient, mode: &Mode) -> Result<Vec<Star>, Box<dyn Error>> {
+    let stars = match mode {
+        Mode::User(user) => {
+            let repos = client.all_user_starred_repositories(user).await?;
+            let mut stars: Vec<Star> = Vec::new();
+            for repo in repos {
+                let ss = client.all_repository_stars(user, &repo.name).await?;
+                stars.extend(ss);
+            }
+            stars.sort_by(|a, b| a.starred_at.cmp(&b.starred_at));
+            stars
+        }
+        Mode::Repository(user, repo) => client.all_repository_stars(user, repo).await?,
+    };
+    Ok(stars)
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
     let mode = Mode::new(args.user, args.repository);
     let token = load_token(args.token);
     let client = GhClient::new(token);
 
-    match mode {
-        Mode::User(user) => {
-            let repos = client.all_user_starred_repositories(&user).await.unwrap();
-            let mut stars: Vec<Star> = Vec::new();
-            for repo in repos {
-                let ss = client
-                    .all_repository_stars(&user, &repo.name)
-                    .await
-                    .unwrap();
-                stars.extend(ss);
-            }
-            stars.sort_by(|a, b| a.starred_at.cmp(&b.starred_at));
-            for star in stars {
-                println!("{:?}", star);
-            }
-        }
-        Mode::Repository(user, repo) => {
-            let stars = client.all_repository_stars(&user, &repo).await.unwrap();
-            for star in stars {
-                println!("{:?}", star);
-            }
-        }
-    }
+    let stars = fetch_all_stars(client, &mode).await?;
+
+    let terminal = ratatui::init();
+
+    let ret = App::new(mode.title(), stars).run(terminal);
+
+    ratatui::restore();
+    ret
 }
