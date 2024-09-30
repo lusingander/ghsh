@@ -12,7 +12,7 @@ use crate::{
         client::{AccessToken, GhClient},
         Star,
     },
-    tui::App,
+    tui::{App, Stars},
 };
 
 #[derive(Parser)]
@@ -22,7 +22,7 @@ struct Args {
     user: Option<String>,
 
     #[arg(short, long, value_name = "NAME")]
-    repository: Option<String>,
+    repository: Option<Vec<String>>,
 
     #[arg(short, long)]
     token: Option<String>,
@@ -45,34 +45,42 @@ fn load_token(token: Option<String>) -> AccessToken {
 
 enum Mode {
     User(String),
-    Repository(String, String),
+    Repositories(Vec<(String, String)>),
 }
 
 impl Mode {
-    fn new(user: Option<String>, repository: Option<String>) -> Self {
-        match (user, repository) {
+    fn new(user: Option<String>, repositories: Option<Vec<String>>) -> Self {
+        match (user, repositories) {
             (Some(user), None) => Self::User(user),
-            (None, Some(repo)) => {
-                let parts: Vec<&str> = repo.split('/').collect();
-                if parts.len() != 2 {
-                    panic!("Invalid repository format: expected 'user/repo'");
-                }
-                Self::Repository(parts[0].into(), parts[1].into())
-            }
-            (Some(user), Some(repo)) => Self::Repository(user, repo),
+            (None, Some(repos)) => Self::Repositories(
+                repos
+                    .into_iter()
+                    .map(|repo| {
+                        let parts: Vec<&str> = repo.split('/').collect();
+                        if parts.len() != 2 {
+                            panic!("Invalid repository format: expected 'user/repo'");
+                        }
+                        (parts[0].into(), parts[1].into())
+                    })
+                    .collect(),
+            ),
+            (Some(user), Some(repos)) => Self::Repositories(
+                repos
+                    .into_iter()
+                    .map(|repo| {
+                        if repo.contains('/') {
+                            panic!("Invalid repository format: expected not to contain '/' if user is specified");
+                        }
+                        (user.clone(), repo)
+                    })
+                    .collect(),
+            ),
             _ => panic!("Invalid arguments: either user or repository must be specified"),
-        }
-    }
-
-    fn title(&self) -> String {
-        match self {
-            Self::User(user) => format!("User: {}", user),
-            Self::Repository(user, repo) => format!("Repository: {}/{}", user, repo),
         }
     }
 }
 
-async fn fetch_all_stars(client: GhClient, mode: &Mode) -> Result<Vec<Star>, Box<dyn Error>> {
+async fn fetch_all_stars(client: GhClient, mode: &Mode) -> Result<Stars, Box<dyn Error>> {
     let stars = match mode {
         Mode::User(user) => {
             let repos = client.all_user_starred_repositories(user).await?;
@@ -82,9 +90,17 @@ async fn fetch_all_stars(client: GhClient, mode: &Mode) -> Result<Vec<Star>, Box
                 stars.extend(ss);
             }
             stars.sort_by(|a, b| a.starred_at.cmp(&b.starred_at));
-            stars
+            Stars::User(stars)
         }
-        Mode::Repository(user, repo) => client.all_repository_stars(user, repo).await?,
+        Mode::Repositories(repos) => {
+            let mut stars: Vec<(String, Vec<Star>)> = Vec::new();
+            for (user, repo) in repos {
+                let name = format!("{}/{}", user, repo);
+                let ss = client.all_repository_stars(user, repo).await?;
+                stars.push((name, ss));
+            }
+            Stars::Repositories(stars)
+        }
     };
     Ok(stars)
 }
@@ -101,7 +117,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let terminal = ratatui::init();
 
-    let ret = App::new(mode.title(), stars).run(terminal);
+    let ret = App::new(stars).run(terminal);
 
     ratatui::restore();
     ret

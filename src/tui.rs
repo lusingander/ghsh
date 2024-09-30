@@ -11,15 +11,19 @@ use ratatui::{
 
 use crate::{chart::StarChartData, github::Star, key_code, key_code_char};
 
+pub enum Stars {
+    User(Vec<Star>),
+    Repositories(Vec<(String, Vec<Star>)>),
+}
+
 pub struct App {
-    title: String,
     data: StarChartData,
 }
 
 impl App {
-    pub fn new(title: String, stars: Vec<Star>) -> Self {
-        let data = StarChartData::new(&stars);
-        Self { title, data }
+    pub fn new(stars: Stars) -> Self {
+        let data = StarChartData::new(stars);
+        Self { data }
     }
 
     pub fn run(self, mut terminal: DefaultTerminal) -> Result<(), Box<dyn Error>> {
@@ -41,18 +45,35 @@ impl App {
     }
 }
 
+const GRAPH_COLORS: [Color; 6] = [
+    Color::Red,
+    Color::Green,
+    Color::Blue,
+    Color::Yellow,
+    Color::Magenta,
+    Color::Cyan,
+];
+
 impl App {
     fn draw(&self, f: &mut Frame) {
-        let datasets = vec![Dataset::default()
-            .name(self.title.clone())
-            .marker(Marker::Braille)
-            .style(Style::default().fg(Color::Yellow))
-            .data(&self.data.data)];
+        let datasets = self
+            .data
+            .datasets
+            .iter()
+            .enumerate()
+            .map(|(i, dataset)| {
+                Dataset::default()
+                    .name(dataset.name.clone())
+                    .marker(Marker::Braille)
+                    .style(Style::default().fg(GRAPH_COLORS[i % GRAPH_COLORS.len()]))
+                    .data(&dataset.data)
+            })
+            .collect();
 
         let chart = Chart::new(datasets)
             .block(
                 Block::bordered().title(
-                    Line::from(self.title.clone())
+                    Line::from("GitHub Star History")
                         .fg(Color::Green)
                         .bold()
                         .centered(),
