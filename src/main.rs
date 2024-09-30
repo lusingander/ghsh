@@ -3,9 +3,11 @@ mod github;
 mod macros;
 mod tui;
 
-use std::error::Error;
+use std::{convert::identity, error::Error, fs::File};
 
 use clap::{command, Parser};
+use log::LevelFilter;
+use simplelog::{format_description, ConfigBuilder, WriteLogger};
 
 use crate::{
     github::{
@@ -26,6 +28,9 @@ struct Args {
 
     #[arg(short, long)]
     token: Option<String>,
+
+    #[arg(long)]
+    debug: bool,
 }
 
 const GITHUB_ACCESS_TOKEN_ENV_VAR: &str = "GHSH_ACCESS_TOKEN";
@@ -108,6 +113,18 @@ async fn fetch_all_stars(client: GhClient, mode: &Mode) -> Result<Stars, Box<dyn
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
+
+    if args.debug {
+        let config = ConfigBuilder::new()
+            .set_time_format_custom(format_description!(
+                "[hour]:[minute]:[second].[subsecond digits:3]"
+            ))
+            .set_time_offset_to_local()
+            .unwrap_or_else(identity)
+            .build();
+        let log_file = File::create("ghsh.log")?;
+        WriteLogger::init(LevelFilter::Debug, config, log_file)?;
+    }
 
     let mode = Mode::new(args.user, args.repository);
     let token = load_token(args.token);

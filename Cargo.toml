@@ -8,9 +8,12 @@ rust-version = "1.81.0"
 chrono = "0.4.38"
 clap = { version = "4.5.18", features = ["derive"] }
 graphql_client = "0.14.0"
+log = "0.4.22"
 ratatui = "0.28.1"
 reqwest = { version = "0.11.27", features = ["json"] }
 serde = "1.0.210"
+simplelog = "0.12.2"
+time = "0.3.36"
 tokio = { version = "1.40.0", features = ["full"] }
 
 [build-dependencies]

@@ -5,6 +5,7 @@ use std::{
 };
 
 use graphql_client::{GraphQLQuery, Response};
+use log::debug;
 use reqwest::{
     header::{self, HeaderMap, HeaderValue},
     ClientBuilder,
@@ -62,6 +63,8 @@ impl GhClient {
             .timeout(Duration::from_secs(10))
             .build()
             .unwrap();
+
+        debug!("GhClient created: {:?}", underlying);
 
         Self { underlying }
     }
@@ -152,15 +155,21 @@ impl GhClient {
 
     async fn request_query<Query, ResponseData>(&self, query: Query) -> Result<ResponseData>
     where
-        Query: Serialize,
+        Query: Serialize + Debug,
         ResponseData: DeserializeOwned + Debug,
     {
-        let resp = self
+        let req = self
             .underlying
             .post(GITHUB_GRAPHQL_API_ENDPOINT)
             .json(&query)
-            .send()
-            .await?;
+            .build()?;
+
+        debug!("Request: {:?}", req);
+        debug!("Query: {:?}", query);
+
+        let resp = self.underlying.execute(req).await?;
+
+        debug!("Response: {:?}", resp);
 
         let resp_body = resp
             .error_for_status()?
