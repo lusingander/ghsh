@@ -17,18 +17,24 @@ use crate::{
     tui::{App, Stars},
 };
 
+/// ghsh - GitHub Stars History TUI
 #[derive(Parser)]
 #[command(version)]
 struct Args {
+    /// GitHub username
     #[arg(short, long, value_name = "NAME")]
     user: Option<String>,
 
-    #[arg(short, long, value_name = "NAME")]
+    /// GitHub repositories (multiple repositories can be specified)
+    /// Format: 'user/repo' or 'repo' if user is specified
+    #[arg(short, long, value_name = "NAME", verbatim_doc_comment)]
     repository: Option<Vec<String>>,
 
+    /// GitHub access token
     #[arg(short, long)]
     token: Option<String>,
 
+    /// Enable debug logging
     #[arg(long)]
     debug: bool,
 }
